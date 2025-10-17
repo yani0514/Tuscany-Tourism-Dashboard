@@ -2,7 +2,6 @@ import * as dfd from "danfojs";
 
 /** 1) Central tendency per area
  * - mean, std, median of total_stays (monthly) for each area
-
  */
 export default function centralTendency(rows) {
     //Display the dataset as DataFrame
