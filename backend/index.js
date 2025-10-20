@@ -88,7 +88,7 @@ app.get("/tourism", async (req, res) => {
     }
 
     // Cache is missing or stale → fetch a fresh copy from Redash
-    const json = await fetchBIData();
+    const json = await fetchTourismData();
 
     // Atomically replace the cache and its timestamp
     cache = json;
