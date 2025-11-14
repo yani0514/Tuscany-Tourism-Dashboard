@@ -13,12 +13,12 @@
  *     and replaces the cache. The cache stores the *entire* Redash envelope,
  *     not just its rows, so clients can diagnose upstream shape changes.
  */
-
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
-import fetchTourismData from "./utils/fetchTourismData.js"; // async fn: fetches Redash JSON envelope
-import { normalizeTourismData } from "./utils/normalizeTourismData.js"; // maps raw rows → normalized rows
+import fetchTourismData from "./utils/dataFromAPI/fetchTourismAPI.js"; // async fn: fetches Redash JSON envelope
+import { normalizeTourismData } from "./utils/dataFromAPI/normalizeTourismData.js"; // maps raw rows → normalized rows
+import { loadTourismCSV } from "./utils/dataFromCSV/loadTourismCSV.js";
 import * as tf from "@tensorflow/tfjs";
 import "@tensorflow/tfjs-backend-wasm";
 
@@ -27,6 +27,7 @@ import centralTendency from "./utils/analysis/centralTendency.js";
 import seasonalityMonthly from "./utils/analysis/seasonalityMonthly.js";
 import dominanceRatio from "./utils/analysis/dominanceRatio.js";
 import KPIs from "./utils/analysis/KPIs.js";
+import { PCC_12, PCC_15, SCC_12, SCC_15 } from "./utils/analysis/correlation.js";
 
 // 1) Load environment variables ASAP so all code that reads process.env sees them
 dotenv.config();
@@ -88,7 +89,7 @@ app.get("/tourism", async (req, res) => {
     }
 
     // Cache is missing or stale → fetch a fresh copy from Redash
-    const json = await fetchBIData();
+    const json = await fetchTourismData();
 
     // Atomically replace the cache and its timestamp
     cache = json;
@@ -272,6 +273,120 @@ app.get("/tourism/kpi", async (req, res) => {
     return res.status(500).json({ error: "Failed to provide KPI analysis!", details: err.message });
   }
 });
+
+// ───────────────────────────── CSV data correlation ────────────────────────
+let csvRows = [];
+app.get("/tourism/csv", async (req, res) => {
+  // If the warm-up failed (or hasn't happened), surface a clear 503
+  if (!ready) {
+    return res.status(503).json({
+      error: "Initialization failed: CSV data unavailable!",
+      details: initError ? initError.message : "Unknown error!",
+    });
+  }
+
+  try {
+    csvRows = await loadTourismCSV();
+
+    console.log(`📘 CSV loaded: ${csvRows.length} rows`);
+
+    return res.json(csvRows);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({
+      error: "Failed to fetch CSV data!",
+      details: err.message,
+    });
+  }
+});
+
+//Pearson Correlation (12 rows)
+app.get("/tourism/pcc12", async(req, res) => {
+  // If the warm-up failed (or hasn't happened), surface a clear 503
+  if (!ready) {
+    return res.status(503).json({
+      error: "Initialization failed: CSV data unavailable!",
+      details: initError ? initError.message : "Unknown error!",
+    });
+  }
+
+  try {
+    const results_pcc_12 = PCC_12(await loadTourismCSV());
+    return res.json(results_pcc_12);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({
+      error: "Failed to fetch CSV data!",
+      details: err.message,
+    });
+  }
+})
+
+//Pearson Correlation (15 rows)
+app.get("/tourism/pcc15", async(req, res) => {
+  // If the warm-up failed (or hasn't happened), surface a clear 503
+  if (!ready) {
+    return res.status(503).json({
+      error: "Initialization failed: CSV data unavailable!",
+      details: initError ? initError.message : "Unknown error!",
+    });
+  }
+
+  try {
+    const results_pcc_15 = PCC_15(await loadTourismCSV());
+    return res.json(results_pcc_15);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({
+      error: "Failed to fetch CSV data!",
+      details: err.message,
+    });
+  }
+})
+
+// Spearman Correlation (12 rows)
+app.get("/tourism/scc12", async(req, res) => {
+  // If the warm-up failed (or hasn't happened), surface a clear 503
+  if (!ready) {
+    return res.status(503).json({
+      error: "Initialization failed: CSV data unavailable!",
+      details: initError ? initError.message : "Unknown error!",
+    });
+  }
+
+  try {
+    const results_scc_12 = SCC_12(await loadTourismCSV());
+    return res.json(results_scc_12);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({
+      error: "Failed to fetch CSV data!",
+      details: err.message,
+    });
+  }
+})
+
+// Spearman Correlation (15 rows)
+app.get("/tourism/scc15", async(req, res) => {
+  // If the warm-up failed (or hasn't happened), surface a clear 503
+  if (!ready) {
+    return res.status(503).json({
+      error: "Initialization failed: CSV data unavailable!",
+      details: initError ? initError.message : "Unknown error!",
+    });
+  }
+
+  try {
+    const results_scc_15 = SCC_15(await loadTourismCSV());
+    return res.json(results_scc_15);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({
+      error: "Failed to fetch CSV data!",
+      details: err.message,
+    });
+  }
+})
 
 // ───────────────────────────── Startup: warm-up + TFJS ───────────────────
 

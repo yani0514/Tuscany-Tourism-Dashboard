@@ -34,7 +34,7 @@ export default function KPIs(rows) {
 
     return {
     totalTouristStays: TTS,
-    averageMonthlyStays: Number(AMS.toFixed(2)),
+    averageMonthlyStays: Number(AMS.toFixed(0)),
     maxMonthlyStays: max,
     maxMonthlyLabel: monthMax, // e.g., "2024-08"
     minMonthlyStays: min,
