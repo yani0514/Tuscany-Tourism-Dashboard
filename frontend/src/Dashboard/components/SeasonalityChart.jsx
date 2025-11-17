@@ -64,7 +64,7 @@ export default function SeasonalityChart() {
   }));
 
   return (
-    <div className="bg-white rounded-xl shadow p-4 h-[600px] flex flex-col">
+    <div className="bg-white rounded-xl shadow p-4 h-[600px] flex flex-col border">
       <h2 className="text-xl font-semibold mb-2 text-center">
         Monthly Seasonality Trends of Tourist Arrivals
       </h2>

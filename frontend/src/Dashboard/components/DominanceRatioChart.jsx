@@ -47,7 +47,7 @@ export default function DominanceRatioChart() {
   );
 
   return (
-    <div className="bg-white rounded-xl shadow p-4 h-[950px] flex flex-col justify-center items-center">
+    <div className="bg-white rounded-xl shadow p-4 h-[950px] flex flex-col justify-center items-center border">
       <h2 className="text-xl font-semibold mb-2 text-center">
         Italian vs Foreign Tourist Share by Area (%)
       </h2>

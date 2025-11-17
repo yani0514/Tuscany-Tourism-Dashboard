@@ -26,7 +26,7 @@ export default function CorrelationHeatmap({ fetchFn, title }) {
   const { columns, values } = data;
 
   return (
-    <div className="body bg-white rounded-xl shadow p-4 flex flex-col">
+    <div className="body bg-white rounded-xl shadow p-4 flex flex-col border">
       <div className="header flex items-baseline mb-3 justify-center">
         <h2 className="text-xl font-semibold">{title}</h2>
       </div>

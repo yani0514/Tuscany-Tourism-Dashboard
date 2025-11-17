@@ -45,7 +45,7 @@ export default function CentralTendencyChart() {
   const sortedData = [...data].sort((a, b) => b.mean - a.mean);
 
   return (
-    <div className="bg-white rounded-xl shadow p-4 h-[800px] flex flex-col">
+    <div className="bg-white rounded-xl shadow p-4 h-[800px] flex flex-col border">
       <h2 className="text-xl font-semibold mb-2 text-center">
         Average Tourist Arrivals by Area
       </h2>
