@@ -1,7 +1,7 @@
 # Tuscany Tourism Dashboard
 
 A data-driven dashboard application for visualizing and analysing tourism activity in the Tuscany region of Italy.  
-The project provides interactive charts, maps, and filtering tools that help explore spatial and temporal tourism trends, supporting sustainable tourism insights and regional decision-making.
+The project provides interactive charts, maps, and tools that help explore spatial and temporal tourism trends, supporting sustainable tourism insights and regional decision-making.
 
 ---
 
@@ -11,8 +11,6 @@ The project provides interactive charts, maps, and filtering tools that help exp
 - Backend API for serving Tuscany tourism data.
 - React-based dashboard with interactive visualisations.
 - Time-series charts showing visitor trends.
-- Map/geo-visualisation of Tuscany destinations.
-- Filters for region, time period, and other categories.
 - Modular project structure enabling easy extension on both backend and frontend.
 
 ---
