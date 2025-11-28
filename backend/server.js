@@ -28,6 +28,7 @@ import seasonalityMonthly from "./utils/analysis/seasonalityMonthly.js";
 import dominanceRatio from "./utils/analysis/dominanceRatio.js";
 import KPIs from "./utils/analysis/KPIs.js";
 import { PCC_12, PCC_15, SCC_12, SCC_15 } from "./utils/analysis/correlation.js";
+import computeNumericColumnStats from "./utils/analysis/statsForVariablesFromCSV/variablesStats.js";
 
 // 1) Load environment variables ASAP so all code that reads process.env sees them
 dotenv.config();
@@ -383,6 +384,28 @@ app.get("/tourism/scc15", async(req, res) => {
     console.error(err);
     return res.status(500).json({
       error: "Failed to fetch CSV data!",
+      details: err.message,
+    });
+  }
+})
+
+// Table with statistics for each variable
+app.get("/tourism/variables", async( req, res) => {
+  if (!ready) {
+    return res.status(503).json({
+      error: "Initialization failed: CSV data unavailable!",
+      details: initError ? initError.message : "Unknown error!",
+    });
+  }
+
+  try {
+    const rows = await loadTourismCSV(); // your existing loader
+    const summaries = computeNumericColumnStats(rows);
+    res.json(summaries);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({
+      error: "Failed to compute statistics for each variable!",
       details: err.message,
     });
   }

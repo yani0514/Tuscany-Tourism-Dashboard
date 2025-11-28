@@ -66,3 +66,8 @@ export function fetchSCC_15() {
   // returns {"columns" ["arrivals_italians","arrivals_foreigners","arrivals_total","stays_italians","stays_foreigners"....], "values" [1,0.811399418799413,0.891157207922602,0.850760060488909]...}
   return apiGet("/tourism/scc15");
 }
+
+export function fetchVariableStats () {
+  // return [{"name": "arrivals_italians", "type": "numeric", "min": 0, "max": 108834,"std": "6269.88","avg": "2134.70","median": 486}]
+  return apiGet("/tourism/variables");
+}

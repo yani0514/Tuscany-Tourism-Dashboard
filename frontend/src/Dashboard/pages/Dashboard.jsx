@@ -6,6 +6,7 @@ import SCC_15Correlation from "../components/Correlation/SCC_15Correlation";
 import DominanceRatioChart from "../components/DominanceRatioChart";
 import SeasonalityChart from "../components/SeasonalityChart";
 import CentralTendencyChart from "../components/CentralTendencyChart";
+import VariableStatsTable from "../components/VariablesStatsTable";
 
 export default function Dashboard() {
   return (
@@ -45,6 +46,10 @@ export default function Dashboard() {
 
             <div className="correlationHeatmapSCC15 mt-10">
               <SCC_15Correlation />
+            </div>
+
+            <div className="variablesStatsTable mt-10">
+              <VariableStatsTable />
             </div>
         </div>
     </div>
