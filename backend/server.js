@@ -29,6 +29,8 @@ import dominanceRatio from "./utils/analysis/dominanceRatio.js";
 import KPIs from "./utils/analysis/KPIs.js";
 import { PCC_12, PCC_15, SCC_12, SCC_15 } from "./utils/analysis/correlation.js";
 import computeNumericColumnStats from "./utils/analysis/statsForVariablesFromCSV/variablesStats.js";
+import { EXCEL_12_COLS } from "./utils/dataFromCSV/loadTourismCSV.js";
+import { runLinearRegressionFromRows, runGLMFromRows } from "./utils/statsServiceClient/statsServiceClient.js";
 
 // 1) Load environment variables ASAP so all code that reads process.env sees them
 dotenv.config();
@@ -411,7 +413,115 @@ app.get("/tourism/variables", async( req, res) => {
   }
 })
 
-// ───────────────────────────── Startup: warm-up + TFJS ───────────────────
+// ──────────────────────────── Python analysis endpoints ────────────────────────────
+// Needed variables
+const Y_COLS = EXCEL_12_COLS.filter(
+  (row) => row !== "avg_length_of_stay"
+);
+
+app.get("/tourism/linearRegression", async (req, res) => {
+  if (!ready) {
+    return res.status(503).json({ 
+      error: "CSV data unavailable",
+      details: initError ? initError.message : "Unknown error!",
+    });
+  }
+
+  try {
+    const rows = await loadTourismCSV();
+
+    const X_COLS = [
+      "n_establishments_hotels",
+      "n_establishments_extrahotel",
+      "n_rentals",
+    ];
+
+    const results = {};
+
+    for (const yCol of Y_COLS) {
+      const modelName = `Y_${yCol}_vs_n_establishments`;
+      const linearRegressionData = await runLinearRegressionFromRows(rows, yCol, X_COLS, modelName);
+      results[yCol] = linearRegressionData;
+    }
+
+    return res.json(results);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({
+      error: "Failed to run regressions",
+      details: err.message,
+    });
+  }
+});
+
+//──────────────────────────── GLM endpoints ────────────────────────────
+
+const GLM_FAMILY_BY_Y = {
+  // Counts (arrivals/stays)
+  arrivals_italians: "poisson",
+  arrivals_foreigners: "poisson",
+  arrivals_total: "poisson",
+  stays_italians: "poisson",
+  stays_foreigners: "poisson",
+  stays_total: "poisson",
+
+  // Continuous / percentage variables
+  coverage: "gaussian",
+  pct_arrivals_italians: "gaussian",
+  pct_arrivals_foreigners: "gaussian",
+  pct_stays_italians: "gaussian",
+  pct_stays_foreigners: "gaussian",
+};
+
+app.get("/tourism/glm", async (req, res) => {
+  if (!ready) {
+    return res.status(503).json({
+      error: "Initialization failed: CSV data unavailable!",
+      details: initError ? initError.message : "Unknown error!",
+    });
+  }
+
+  try {
+    const rows = await loadTourismCSV();
+
+    // All establishment predictors
+    const X_COLS = [
+      "n_establishments_hotels",
+      "n_establishments_extrahotel",
+      "n_rentals",
+    ];
+
+    const results = {};
+
+    for (const [yCol, family] of Object.entries(GLM_FAMILY_BY_Y)) {
+      if (!(yCol in rows[0])) {
+        results[yCol] = {
+          error: `Missing column in CSV: ${yCol}`,
+        };
+        continue;
+      }
+
+      const modelName = `Y_${family}_${yCol}_vs_n_establishments`;
+      const generalizedLinearModel = await runGLMFromRows(rows, yCol, X_COLS, family, modelName);
+      results[yCol] = generalizedLinearModel;
+    }
+
+    return res.json({
+      ok: true,
+      family_map: GLM_FAMILY_BY_Y,
+      x_cols: X_COLS,
+      results,
+    });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({
+      error: "Failed to run GLM regressions",
+      details: err.message,
+    });
+  }
+});
+
+// ───────────────────────────── Startup: warm-up + TFJS ─────────────────────────────
 
 /*
  * On process start:

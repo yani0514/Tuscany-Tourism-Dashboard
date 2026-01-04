@@ -38,8 +38,8 @@ export function normalizeTourismDataCSV(row) {
   // Build a new object with renamed keyeys, preserving unkeynown columns
   const normalized = {};
   for (const key of Object.keys(row)) {
-    const newkeyey = map[key] || key; // pass-through for unexpected columns
-    normalized[newkeyey] = row[key];
+    const newkey = map[key] || key; // pass-through for unexpected columns
+    normalized[newkey] = row[key];
   }
   return normalized;
 }
