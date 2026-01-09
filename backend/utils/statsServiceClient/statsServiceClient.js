@@ -82,3 +82,23 @@ export async function runGLMFromRows(rows, yCol, xCols, family, modelName) {
 
   return callGLM(payload);
 }
+
+export async function runSeasonalityFromRows(rows, metricCol, outRoot = "exports/seasonality") {
+  // send rows exactly in your format; python code adapts schema
+  const response = await fetch(`${`http://localhost:`+ STATS_SERVICE_URL}/seasonality`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      metric_col: metricCol,
+      rows,
+      out_root: outRoot,
+    }),
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`Seasonality service failed: ${response.status} ${text}`);
+  }
+
+  return response.json(); // { run_id, run_dir, results, ... }
+}

@@ -16,6 +16,8 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
+import path from "path";
+import fs from "fs/promises";
 import fetchTourismData from "./utils/dataFromAPI/fetchTourismAPI.js"; // async fn: fetches Redash JSON envelope
 import { normalizeTourismData } from "./utils/dataFromAPI/normalizeTourismData.js"; // maps raw rows → normalized rows
 import { loadTourismCSV } from "./utils/dataFromCSV/loadTourismCSV.js";
@@ -31,6 +33,7 @@ import { PCC_12, PCC_15, SCC_12, SCC_15 } from "./utils/analysis/correlation.js"
 import computeNumericColumnStats from "./utils/analysis/statsForVariablesFromCSV/variablesStats.js";
 import { EXCEL_12_COLS } from "./utils/dataFromCSV/loadTourismCSV.js";
 import { runLinearRegressionFromRows, runGLMFromRows } from "./utils/statsServiceClient/statsServiceClient.js";
+import { runSeasonalityFromRows } from "./utils/statsServiceClient/statsServiceClient.js";
 
 // 1) Load environment variables ASAP so all code that reads process.env sees them
 dotenv.config();
@@ -57,6 +60,13 @@ let cache = null;     // Redash envelope or null when unknown/failed
 let cacheTime = 0;    // `Date.now()` when cache was last updated
 let ready = false;    // True after the initial warm-up fetch succeeds
 let initError = null; // Error captured during warm-up (if any)
+
+// ───────────────────────────── Small helpers ─────────────────────────────
+
+function safeName(text) {
+  return String(text).replace(/[^a-zA-Z0-9]/g, "_");
+}
+
 
 // ───────────────────────────── Routes ────────────────────────────────────
 
@@ -516,6 +526,63 @@ app.get("/tourism/glm", async (req, res) => {
     console.error(err);
     return res.status(500).json({
       error: "Failed to run GLM regressions",
+      details: err.message,
+    });
+  }
+});
+
+
+// ───────────────────────────── Seasonality indices ─────────────────────────────
+
+const STATS_SERVICE_URL = process.env.STATS_SERVICE_URL || 8001;
+
+app.get("/tourism/seasonality-indices", async (req, res) => {
+  if (!ready) {
+    return res.status(503).json({
+      error: "CSV data unavailable",
+      details: initError ? initError.message : "Unknown error!",
+    });
+  }
+
+  try {
+    const metricCol = String(req.query.metric_col || "arrivals_total");
+
+    const rows = await loadTourismCSV();
+
+    // Send minimal rows to reduce payload size
+    const minimalRows = rows.map((r) => ({
+      municipality: r.municipality,
+      year_month: r.year_month,
+      [metricCol]: r[metricCol],
+    }));
+
+    const pythonOut = await runSeasonalityFromRows(minimalRows, metricCol);
+    const runId = pythonOut.run_id;
+
+    // Python returns relative paths like "<run_id>/plots/<safe>/A_simple.png"
+    // Convert them to absolute Python URLs so we can download them
+    const results = pythonOut.results;
+
+    for (const municipalityName of Object.keys(results)) {
+      const plotFiles = results[municipalityName].plot_files;
+
+      const pythonPlotUrls = {};
+      for (const methodKey of Object.keys(plotFiles)) {
+        pythonPlotUrls[methodKey] = `http://localhost:${STATS_SERVICE_URL}/exports/seasonality/${plotFiles[methodKey]}`;
+      }
+      results[municipalityName].python_plot_urls = pythonPlotUrls;
+    }
+
+    return res.json({
+      ok: true,
+      metric_col: metricCol,
+      run_id: runId,
+      results,
+    });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({
+      error: "Failed to compute seasonality indices",
       details: err.message,
     });
   }
