@@ -23,7 +23,6 @@ def to_canonical_monthly_df(
     df["municipality"] = df[municipality_col].astype(str)
     df["y"] = pd.to_numeric(df[metric_col], errors="coerce")
 
-    # Optionally include trend_hat (if you already computed it elsewhere)
     if trend_hat_col is not None:
         if trend_hat_col not in df.columns:
             raise ValueError(f"trend_hat_col='{trend_hat_col}' not found in dataframe.")

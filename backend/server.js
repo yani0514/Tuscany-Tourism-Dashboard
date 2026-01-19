@@ -464,6 +464,41 @@ app.get("/tourism/linearRegression", async (req, res) => {
   }
 });
 
+app.get("/tourism/linearRegressionTest", async (req, res) => {
+  if (!ready) {
+    return res.status(503).json({ 
+      error: "CSV data unavailable",
+      details: initError ? initError.message : "Unknown error!",
+    });
+  }
+
+  try {
+    const rows = await loadTourismCSV();
+
+    const X_COLS = [
+      "n_establishments_hotels",
+      "n_establishments_extrahotel",
+      "n_rentals",
+    ];
+
+    const results = {};
+
+    for (const yCol of Y_COLS) {
+      const modelName = `Y_${yCol}_vs_n_establishments`;
+      const linearRegressionData = await runLinearRegressionFromRows(rows, yCol, X_COLS, modelName);
+      results[yCol] = linearRegressionData;
+    }
+
+    return res.json(results);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({
+      error: "Failed to run regressions",
+      details: err.message,
+    });
+  }
+});
+
 //──────────────────────────── GLM endpoints ────────────────────────────
 
 const GLM_FAMILY_BY_Y = {

@@ -31,7 +31,7 @@ def run_linear_regression(y_list, X_dict, model_name=None):
     Returns a plain dict that can be serialized to JSON.
     """
 
-    # Build DataFrame like you do in a notebook
+    # Build DataFrame
     df = pd.DataFrame(X_dict)
     df["__y__"] = y_list
 

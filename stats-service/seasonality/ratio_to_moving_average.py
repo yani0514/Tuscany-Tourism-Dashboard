@@ -17,7 +17,7 @@ def ratio_to_moving_average(monthly_prepared_dataframe: pd.DataFrame) -> np.ndar
     """
     prepared_dataframe = monthly_prepared_dataframe.copy()
 
-    # --- Sort safely in true chronological order (CRITICAL) ---
+    # --- Sort safely in true chronological order ---
     if "date" in prepared_dataframe.columns:
         prepared_dataframe["date"] = pd.to_datetime(prepared_dataframe["date"])
         prepared_dataframe = prepared_dataframe.sort_values("date").reset_index(drop=True)

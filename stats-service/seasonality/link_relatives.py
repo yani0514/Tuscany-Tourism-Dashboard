@@ -54,9 +54,4 @@ def link_relatives(monthly_dataframe: pd.DataFrame) -> np.ndarray:
         else:
             chained_seasonal_index[month_index] = chained_seasonal_index[month_index - 1] * (average_lr_percent / 100.0)
 
-    # If some months became NaN (missing data), you can either:
-    # - leave them NaN (plot will show gaps), or
-    # - fill them (not recommended unless your professor asked).
-    #
-    # Finally normalize: base 100, sum 1200
     return scale_base100_to_sum1200(chained_seasonal_index)
