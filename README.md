@@ -1,7 +1,7 @@
 # Tuscany Tourism Dashboard
 
 A data-driven dashboard application for visualizing and analysing tourism activity in the Tuscany region of Italy.  
-The project provides interactive charts, maps, and tools that help explore spatial and temporal tourism trends, supporting sustainable tourism insights and regional decision-making.
+The project provides interactive charts, and tools that help explore spatial and temporal tourism trends, supporting sustainable tourism insights and regional decision-making.
 
 ---
 
